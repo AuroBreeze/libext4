@@ -1,5 +1,5 @@
-#ifndef __EXT4FS_EXT4_H__
-#define __EXT4FS_EXT4_H__
+#ifndef _EXT4_EXT4_H
+#define _EXT4_EXT4_H
 
 #include "types.h"
 
@@ -109,6 +109,8 @@
 #define EXT4_FEATURE_RO_COMPAT_DIR_NLINK 0x0020
 #define EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE 0x0040
 #define EXT4_FEATURE_RO_COMPAT_METADATA_CSUM 0x0400
+
+typedef int (*ext4_bread_t)(uint32 dev, uint64 block, uint8 *buf, void *priv);
 
 struct ext4_fs {
 	/* Kernel virtio block device number that contains this EXT4 image. */

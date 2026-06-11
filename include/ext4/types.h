@@ -1,5 +1,5 @@
-#ifndef KERNEL_TYPES_H
-#define KERNEL_TYPES_H
+#ifndef _EXT4_TYPES_H
+#define _EXT4_TYPES_H
 
 typedef unsigned int uint;
 typedef unsigned short ushort;

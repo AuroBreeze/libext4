@@ -11,4 +11,6 @@ compile_commands.json
 .*.swp
 .vscode/
 .idea/
+
 .clang*
+sdcard-rv.img
