@@ -1,0 +1,14 @@
+build/
+compile_commands.json
+.cache/
+
+# stale build artifacts (pre-out-of-tree leftovers)
+*.o
+*.a
+
+# editors
+*~
+.*.swp
+.vscode/
+.idea/
+.clang*

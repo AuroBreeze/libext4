@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM '*.c' '*.h')
+
+if [ -z "$STAGED" ]; then
+	exit 0
+fi
+
+echo "Running clang-format on staged files..."
+echo "$STAGED" | while IFS= read -r f; do
+	if [ ! -f "$f" ]; then
+		continue
+	fi
+	clang-format -i "$f"
+	git add "$f"
+done
+echo "Done."
