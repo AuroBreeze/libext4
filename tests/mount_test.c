@@ -27,6 +27,27 @@ struct file_disk {
 	uint32 block_size;
 };
 
+static int kalloc_alloc_calls;
+static int kalloc_free_calls;
+static uint64 kalloc_last_size;
+static void *kalloc_last_ptr;
+static void *kalloc_freed_ptr;
+
+static void *test_kalloc(uint64 size)
+{
+	kalloc_alloc_calls++;
+	kalloc_last_size = size;
+	kalloc_last_ptr = malloc(size);
+	return kalloc_last_ptr;
+}
+
+static void test_kfree(void *ptr)
+{
+	kalloc_free_calls++;
+	kalloc_freed_ptr = ptr;
+	free(ptr);
+}
+
 static int expect_u32(const char *name, uint32 actual, uint32 expected)
 {
 	printf("%s: %u\n", name, actual);
@@ -43,6 +64,17 @@ static int expect_u64(const char *name, uint64 actual, uint64 expected)
 	printf("%s: %lu\n", name, actual);
 	if (actual != expected) {
 		fprintf(stderr, "%s mismatch: got %lu, expected %lu\n", name,
+			actual, expected);
+		return -1;
+	}
+	return 0;
+}
+
+static int expect_ptr(const char *name, void *actual, void *expected)
+{
+	printf("%s: %p\n", name, actual);
+	if (actual != expected) {
+		fprintf(stderr, "%s mismatch: got %p, expected %p\n", name,
 			actual, expected);
 		return -1;
 	}
@@ -94,7 +126,7 @@ int main(int argc, char **argv)
 		return 2;
 	}
 
-	kalloc_set_allocator(malloc, free);
+	kalloc_set_allocator(test_kalloc, test_kfree);
 	disk.fp = fopen(argv[1], "rb");
 	if (disk.fp == NULL) {
 		perror("fopen");
@@ -129,6 +161,13 @@ int main(int argc, char **argv)
 	    expect_u32("inode_size", fs.inode_size, 256) < 0 ||
 	    expect_u32("desc_size", fs.desc_size, 64) < 0 ||
 	    expect_u64("group_desc_block", fs.group_desc_block, 1) < 0) {
+		return 1;
+	}
+	if (expect_u32("kalloc_alloc_calls", kalloc_alloc_calls, 1) < 0 ||
+	    expect_u32("kalloc_free_calls", kalloc_free_calls, 1) < 0 ||
+	    expect_u64("kalloc_last_size", kalloc_last_size, KALLOC_SIZE) < 0 ||
+	    expect_ptr("kalloc_freed_ptr", kalloc_freed_ptr, kalloc_last_ptr) <
+		0) {
 		return 1;
 	}
 

@@ -82,5 +82,6 @@ int ext4_mount(uint64 dev, struct ext4_io *method, struct ext4_fs *fs)
 	fs->feature_incompat = ext4_read_le32(sb + EXT4_SB_FEATURE_INCOMPAT);
 	fs->feature_ro_compat = ext4_read_le32(sb + EXT4_SB_FEATURE_RO_COMPAT);
 
+	kfree(buf);
 	return ext4_check_features(fs);
 }
