@@ -43,7 +43,7 @@ static int ext4_check_features(struct ext4_fs *fs)
 	return 0;
 }
 
-int ext4_mount(uint64 dev, struct ext4_io *method, struct ext4_fs *fs)
+int ext4_mount(uint64 dev, struct ext4_backend *backend, struct ext4_fs *fs)
 {
 	// use 4KB by default to read superblock
 	struct ext4_fs first = {.block_size = 0x1000};
@@ -51,7 +51,7 @@ int ext4_mount(uint64 dev, struct ext4_io *method, struct ext4_fs *fs)
 	uint8 *buf = kalloc(); // allocate 4KB
 	memset(buf, 0, KALLOC_SIZE);
 
-	ext4_read_fs_block(&first, method, dev, (uint8 *)buf);
+	ext4_read_fs_block(&first, backend, dev, (uint8 *)buf);
 
 	const uint8 *sb = buf + EXT4_SUPER_OFFSET;
 	uint16 magic = ext4_read_le16(sb + EXT4_SB_MAGIC);

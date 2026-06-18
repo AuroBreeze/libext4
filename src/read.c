@@ -15,18 +15,19 @@
  *
  * Return: 0
  * */
-int ext4_read_inode_table_block(struct ext4_fs *fs, struct ext4_io data,
-				uint32 group, uint64 *block)
+int ext4_read_inode_table_block(struct ext4_fs *fs,
+				struct ext4_backend *backend, uint32 group,
+				uint64 *block)
 {
-	uint64 decs_offset = fs->desc_size * group;
+	uint64 desc_offset = fs->desc_size * group;
 	uint64 byte_offset =
-	    (fs->group_desc_block * fs->block_size) + decs_offset;
+	    (fs->group_desc_block * fs->block_size) + desc_offset;
 
-	uint64 cache_offset = byte_offset / (uint64)data.io_block_size;
-	uint64 offset_in_block = byte_offset % (uint64)data.io_block_size;
+	uint64 cache_offset = byte_offset / (uint64)backend->block_size;
+	uint64 offset_in_block = byte_offset % (uint64)backend->block_size;
 
 	uint8 *dst = kalloc();
-	ext4_read_fs_block(fs, &data, cache_offset, dst);
+	ext4_read_fs_block(fs, backend, cache_offset, dst);
 
 	const uint8 *gd = dst + offset_in_block;
 	*block = ext4_read_le64_split(gd + EXT4_GD_INODE_TABLE_LO,
@@ -48,23 +49,23 @@ int ext4_read_inode_table_block(struct ext4_fs *fs, struct ext4_io data,
  *
  * Return: 0
  * */
-int ext4_read_inode(struct ext4_fs *fs, struct ext4_io data,
+int ext4_read_inode(struct ext4_fs *fs, struct ext4_backend *backend,
 		    struct ext4_inode *inode, uint64 ino)
 {
 	uint64 group = (ino - 1) / fs->inodes_per_group;
 	uint64 index = (ino - 1) % fs->inodes_per_group;
 
 	uint64 inode_table_block;
-	ext4_read_inode_table_block(fs, data, group, &inode_table_block);
+	ext4_read_inode_table_block(fs, backend, group, &inode_table_block);
 
 	uint64 inode_table_byte_offset =
 	    (inode_table_block * fs->block_size) + index * fs->inode_size;
-	uint64 cache_offset = inode_table_byte_offset / data.io_block_size;
+	uint64 cache_offset = inode_table_byte_offset / backend->block_size;
 	uint64 offset_in_block =
-	    (inode_table_block * fs->block_size) % data.io_block_size;
+	    (inode_table_block * fs->block_size) % backend->block_size;
 
 	uint8 *buf = kalloc();
-	ext4_read_fs_block(fs, &data, cache_offset, buf);
+	ext4_read_fs_block(fs, backend, cache_offset, buf);
 	const uint8 *raw_inode = buf + offset_in_block;
 
 	inode->mode = ext4_read_le16(raw_inode + EXT4_INODE_MODE);

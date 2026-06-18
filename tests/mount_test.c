@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int ext4_mount(uint64 dev, struct ext4_io *method, struct ext4_fs *fs);
+int ext4_mount(uint64 dev, struct ext4_backend *backend, struct ext4_fs *fs);
 
 static void test_kprintf(const char *fmt, ...)
 {
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 {
 	struct file_disk disk;
 	struct ext4_fs fs;
-	struct ext4_io io;
+	struct ext4_backend backend;
 	int ret;
 
 	if (argc != 2) {
@@ -134,14 +134,14 @@ int main(int argc, char **argv)
 	}
 	disk.block_size = 512;
 
-	io.dev = 0;
-	io.superb_block = 0;
-	io.io_block_size = disk.block_size;
-	io.priv = &disk;
-	io.getblk = file_getblk;
-	io.putblk = file_putblk;
+	backend.dev = 0;
+	backend.superblock_block = 0;
+	backend.block_size = disk.block_size;
+	backend.priv = &disk;
+	backend.getblk = file_getblk;
+	backend.putblk = file_putblk;
 
-	ret = ext4_mount(0, &io, &fs);
+	ret = ext4_mount(0, &backend, &fs);
 	fclose(disk.fp);
 
 	if (ret != 0) {
