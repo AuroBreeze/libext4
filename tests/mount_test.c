@@ -1,11 +1,13 @@
 #include "callback.h"
+#include "ext4.h"
+#include "kalloc.h"
 #include "types.h"
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-int ext4_mount(uint64 dev, struct ext4_io *method);
+int ext4_mount(uint64 dev, struct ext4_io *method, struct ext4_fs *fs);
 
 static void test_kprintf(const char *fmt, ...)
 {
@@ -24,6 +26,28 @@ struct file_disk {
 	FILE *fp;
 	uint32 block_size;
 };
+
+static int expect_u32(const char *name, uint32 actual, uint32 expected)
+{
+	printf("%s: %u\n", name, actual);
+	if (actual != expected) {
+		fprintf(stderr, "%s mismatch: got %u, expected %u\n", name,
+			actual, expected);
+		return -1;
+	}
+	return 0;
+}
+
+static int expect_u64(const char *name, uint64 actual, uint64 expected)
+{
+	printf("%s: %lu\n", name, actual);
+	if (actual != expected) {
+		fprintf(stderr, "%s mismatch: got %lu, expected %lu\n", name,
+			actual, expected);
+		return -1;
+	}
+	return 0;
+}
 
 static int file_getblk(uint32 dev, uint64 block, struct ext4_block *out,
 		       void *priv)
@@ -61,6 +85,7 @@ static int file_putblk(struct ext4_block *blk, void *priv)
 int main(int argc, char **argv)
 {
 	struct file_disk disk;
+	struct ext4_fs fs;
 	struct ext4_io io;
 	int ret;
 
@@ -69,6 +94,7 @@ int main(int argc, char **argv)
 		return 2;
 	}
 
+	kalloc_set_allocator(malloc, free);
 	disk.fp = fopen(argv[1], "rb");
 	if (disk.fp == NULL) {
 		perror("fopen");
@@ -83,11 +109,26 @@ int main(int argc, char **argv)
 	io.getblk = file_getblk;
 	io.putblk = file_putblk;
 
-	ret = ext4_mount(0, &io);
+	ret = ext4_mount(0, &io, &fs);
 	fclose(disk.fp);
 
 	if (ret != 0) {
 		fprintf(stderr, "ext4_mount failed: %d\n", ret);
+		return 1;
+	}
+	if (fs.block_size == 0 || fs.inodes_count == 0 ||
+	    fs.blocks_count == 0) {
+		fprintf(stderr, "ext4_mount returned incomplete fs state\n");
+		return 1;
+	}
+	if (expect_u32("block_size", fs.block_size, 4096) < 0 ||
+	    expect_u64("blocks_count", fs.blocks_count, 1048576) < 0 ||
+	    expect_u32("inodes_count", fs.inodes_count, 262144) < 0 ||
+	    expect_u32("blocks_per_group", fs.blocks_per_group, 32768) < 0 ||
+	    expect_u32("inodes_per_group", fs.inodes_per_group, 8192) < 0 ||
+	    expect_u32("inode_size", fs.inode_size, 256) < 0 ||
+	    expect_u32("desc_size", fs.desc_size, 64) < 0 ||
+	    expect_u64("group_desc_block", fs.group_desc_block, 1) < 0) {
 		return 1;
 	}
 

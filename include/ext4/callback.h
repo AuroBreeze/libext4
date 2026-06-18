@@ -12,6 +12,7 @@ struct ext4_block {
 
 typedef int (*ext4_getblk_t)(uint32 dev, uint64 block, struct ext4_block *out,
 			     void *priv);
+
 typedef int (*ext4_putblk_t)(struct ext4_block *blk, void *priv);
 
 struct ext4_io {
