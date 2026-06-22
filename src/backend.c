@@ -11,7 +11,8 @@
  * Return: 0 on success
  * */
 int ext4_read_fs_block(const struct ext4_fs *fs,
-		       const struct ext4_backend *backend, uint64 block, uint8 *dst)
+		       const struct ext4_backend *backend, uint64 block,
+		       uint8 *dst)
 {
 	uint64 bytes = block * fs->block_size;
 	uint64 copied = 0;
@@ -27,7 +28,7 @@ int ext4_read_fs_block(const struct ext4_fs *fs,
 		struct ext4_block blk = {0};
 
 		int ret = backend->getblk(backend->dev, backend_block, &blk,
-					      backend->priv);
+					  backend->priv);
 		if (ret < 0) {
 			return ret;
 		}
